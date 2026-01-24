@@ -1,0 +1,10 @@
+.DS_Store
+.venv/
+.env
+logs/
+postgres-ssl
+get-pip.py
+__pycache__/
+__init__.py
+.*.yml
+target/
