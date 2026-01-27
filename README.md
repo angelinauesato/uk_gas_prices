@@ -1,0 +1,94 @@
+# 🚀 UK Fuel Price Archiver (v1)
+A robust data engineering pipeline built with **Airflow 3** and **Docker** to archive daily fuel prices from major UK retailers (Asda, BP, Esso, etc.)
+into a **MinIO** (S3-compatible) Data Lake.
+# 🛠 Tech Stack
+* Orchestrator: Airflow 3 (TaskFlow API)
+* Storage: MinIO (S3 API)
+* Containerization: Docker & Docker Compose
+* Language: Python 3.12 (Requests, Boto3)
+
+# 📂 Project Structure
+```
+├── dags/
+│   └── fuel_fetch_data/
+│       └── api_request.py    # Main DAG file
+├── docker-compose.yaml       # Airflow & MinIO services
+|── .env                      # ignored and not pushed to the repo
+└── README.md
+```
+# 🚀 Getting Started
+  1. Prerequisites:<br />
+     - Docker and Docker Compose installed.
+     - Port 8080 (Airflow) and 9001 (MinIO Console) are available.
+  2. Configuration Parameters: <br />
+     Ensure your .env file contains the following variables: <br />
+      ```
+        AIRFLOW_UID=50000
+        AIRFLOW_GID=0
+        AIRFLOW_PROJ_DIR=.
+        COMPOSE_PROJECT_NAME=uk_gas_price
+        AIRFLOW_IMAGE_NAME=apache/airflow:3.0.0
+        POSTGRES_USER={USER}
+        POSTGRES_PASSWORD={PASSWORD}
+        POSTGRES_DB=airflow
+        # Airflow UI Credentials
+        AIRFLOW_WWW_USER_USERNAME={AIRFLOW_USER}
+        AIRFLOW_WWW_USER_PASSWORD={AIRFLOW_PASSWORD}
+        MINIO_ROOT_USER={MINIO_ROOT_USER}
+        MINIO_ROOT_PASSWORD={MINIO_ROOT_PASSWORD}
+        # python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+        FERNET_KEY={RUN_PYTHON_COMMENTED_CODE_ABOVE}
+    
+        ```
+  3. Launch the Environment
+     ```
+     docker compose -p uk_gas_prices up -d
+     ```
+  4. Setup Airflow Connections <br/>
+     - To allow Airflow to talk to MinIO, create a connection in the Airflow UI (Admin -> Connections):
+       - Conn Id: aws_s3_gas_prices
+       - Conn Type: Amazon S3
+       - Extra:
+         ```
+         {"endpoint_url": "http://minio:9000", "aws_access_key_id": "{MINIO_ROOT_USER}", "aws_secret_access_key": "{MINIO_ROOT_PASSWORD}"<br />
+         ```
+       **Note:** You will need to replace: {MINIO_ROOT_USER} and {MINIO_ROOT_PASSWORD} with your information, from **.env** file.
+# 🕒 Scheduling<br />
+The DAG is configured to run daily at **9:00 AM UTC** using the cron expression 0 9 * * *.
+# 📊 Data Coverage
+|  Retailer     |   Status  |      Note                             |
+|---------------|-----------|---------------------------------------|
+| Applegreen    | ✅ Active | Reliable JSON endpoint.               |
+| Asda          | ✅ Active | Direct government-mandated feed.      |
+| BP            | ✅ Active | Requires custom User-Agent headers.   |
+| Esso          | ✅ Active | Hosted on specialized data subdomain. |
+| Shell         | ❌ Blocked| Protected by Akamai Bot Manager (403).|
+# 🧪 Testing the Pipeline <br />
+You can manually trigger a test run inside the scheduler container:
+```
+docker exec -it <container_id> airflow dags test uk_fuel_price_archive_v1 2026-01-24
+```
+# 📜 Roadmap:<br />
+- [x] Ingest data from retailers and save it inside of MinIO bucket.
+- [ ] Add a transformation layer to convert JSON. TBD: Airflow or dbt
+- [ ] Save data. TBD: Postgres or Databricks.
+- [ ] Turn the data available into a BI Tool.
+- [ ] Build a Slack or e-mail notification task for failure alerts.
+- [ ] Implement Shell bypass.
+
+# 🔍 Troubleshooting & Known Issues
+1. Shell 403 Forbidden Error <br />
+**Issue:** The Shell API returns a 403 Forbidden error despite correct headers and session handling. <br />
+**Cause:** Shell utilizes Akamai Bot Manager which performs TLS Fingerprinting. It identifies the Python requests library at the network handshake level as a non-browser entity.<br />
+**Workaround:** Currently, Shell data is skipped to maintain pipeline health. Future versions may implement another solution.<br />
+2. MinIO Connectivity<br />
+**Issue:** botocore.exceptions.EndpointConnectionError <br />
+**Solution:** Ensure  to add the connection in Airflow.
+
+# 🗄️ Data Verification
+To verify the integrity of the data lake without using the web UI, use the following CLI commands:
+
+**List all archived files:**
+```
+docker exec -it uk_gas_prices-airflow-scheduler-1 python3 -c "from airflow.providers.amazon.aws.hooks.s3 import S3Hook; print(S3Hook(aws_conn_id='aws_s3_gas_prices').list_keys(bucket_name='uk-gas-price'))"
+```
