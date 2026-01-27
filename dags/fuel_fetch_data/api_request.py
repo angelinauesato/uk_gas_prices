@@ -1,6 +1,7 @@
 import json
 import requests
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
@@ -12,8 +13,17 @@ RETAILERS = [
     {"brand": "Esso", "url": "https://fuelprices.esso.co.uk/latestdata.json"}
 ]
 
+default_args = {
+    'owner': 'airflow',
+    'retries': 3,                            # Number of retries
+    'retry_delay': timedelta(seconds=30),
+    'retry_exponential_backoff': True,
+    'max_retry_delay': timedelta(minutes=5), # But no more than 5 mins
+}
+
 @dag(
     dag_id='uk_fuel_price_archive_v1',
+    default_args=default_args,
     schedule='0 9 * * *',  # Runs at 0 minutes, 9 hours (9:00 AM) every day
     start_date=datetime(2024, 1, 1),
     catchup=False
@@ -63,9 +73,13 @@ def fuel_price_collector_dag():
                     bucket_name=bucket_name,
                     replace=True
                 )
+                print(f"Uploaded {brand}. Sleeping for 2 seconds to avoid MinIO deadlock...")
+                time.sleep(2)
+
                 results.append(f"Successfully uploaded {brand}")
             except Exception as e:
-                results.append(f"Failed {brand}: {str(e)}")
+                # This forces Airflow to see the error and trigger a retry
+                raise Exception(f"Retailer {retailer} failed to upload: {str(e)}")
         
         return results
 
