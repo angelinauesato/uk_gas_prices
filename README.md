@@ -24,10 +24,9 @@ into a **MinIO** (S3-compatible) Data Lake.
      Ensure your .env file contains the following variables: <br />
       ```
         AIRFLOW_UID=50000
+        AIRFLOW_USER=airflow
+        AIRFLOW_PASSWORD=airflow
         AIRFLOW_GID=0
-        AIRFLOW_PROJ_DIR=.
-        COMPOSE_PROJECT_NAME=uk_gas_price
-        AIRFLOW_IMAGE_NAME=apache/airflow:3.0.0
         POSTGRES_USER={USER}
         POSTGRES_PASSWORD={PASSWORD}
         POSTGRES_DB=airflow
@@ -70,9 +69,10 @@ docker exec -it <container_id> airflow dags test uk_fuel_price_archive_v1 2026-0
 ```
 # 📜 Roadmap:<br />
 - [x] Ingest data from retailers and save it inside of MinIO bucket.
-- [ ] Add a transformation layer to convert JSON. TBD: Airflow or dbt
+- [ ] Add a transformation layer to convert JSON raw layer (database in Postgres).
 - [ ] Save data. TBD: Postgres or Databricks.
 - [ ] Turn the data available into a BI Tool.
+- [ ] Data Archiving - moves old records (older than 30 days) into a long-term storage table
 - [ ] Build a Slack or e-mail notification task for failure alerts.
 - [ ] Implement Shell bypass.
 
