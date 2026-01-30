@@ -1,0 +1,62 @@
+import os
+from airflow.decorators import dag, task
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.hooks.base import BaseHook
+from airflow.operators.dagrun_operator import TriggerDagRunOperator
+
+from datetime import datetime
+
+RETAILERS = ["Applegreen", "Asda", "BP", "Esso"]
+
+@dag(
+    start_date=datetime(2026, 1, 29),
+    schedule=None,
+    catchup=False,
+    tags=['spark', 'fuel_prices']
+)
+def fuel_prices_unified_pipeline():
+    
+    s3_conn = BaseHook.get_connection('aws_s3_gas_prices')
+    pg_conn = BaseHook.get_connection('postgres_raw')
+    pg_jdbc_url = f"jdbc:postgresql://{pg_conn.host}:{pg_conn.port}/{pg_conn.schema}"
+
+    # Success Notification
+    @task
+    def notify_completion(retailers):
+        print(f"Successfully finished processing {len(retailers)} retailers: {', '.join(retailers)}")
+        return True
+
+    spark_tasks = []
+    
+    for brand in RETAILERS:
+        # The Spark Task: Writes to stg_raw_{brand}
+        st = SparkSubmitOperator(
+            task_id=f'spark_process_{brand}',
+            conn_id='spark_main',
+            application='/opt/airflow/dags/scripts/process_fuel.py',
+            application_args=[
+                brand, 
+                "{{ (dag_run.conf.get('target_date', ds) | replace('-', '_')) }}"
+            ],
+            env_vars={
+                "PG_URL": pg_jdbc_url,
+                "PG_USER": pg_conn.login,
+                "PG_PASSWORD": pg_conn.password,
+                "AWS_ACCESS_KEY_ID": s3_conn.login,
+                "AWS_SECRET_ACCESS_KEY": s3_conn.password
+            },
+            conf={
+                "spark.ui.enabled": "false",
+                "spark.hadoop.fs.s3a.endpoint": "http://minio:9000",
+                "spark.hadoop.fs.s3a.path.style.access": "true",
+                "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
+                "spark.jars": "/opt/airflow/hadoop-aws-3.3.4.jar,/opt/airflow/aws-java-sdk-bundle-1.12.262.jar,/opt/airflow/postgresql-42.7.1.jar"
+            }
+        )
+        spark_tasks.append(st)
+
+    # Dependency: All tasks must finish before Notification
+    spark_tasks >> notify_completion(RETAILERS)
+
+fuel_prices_unified_pipeline()

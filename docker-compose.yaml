@@ -1,7 +1,8 @@
-version: '3.8'
 
 x-airflow-common: &airflow-common
   build: .
+  env_file:
+    - .env
   # image: apache/airflow:2.8.1-python3.11  # Uncomment this to use the standard image
   environment: &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -12,8 +13,8 @@ x-airflow-common: &airflow-common
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     DBT_PROFILES_DIR: /opt/airflow/dbt/my_project
-    _PIP_ADDITIONAL_REQUIREMENTS: 'dbt-core dbt-postgres'
-    _AIRFLOW_OS_DEPENDENCIES: "git"
+    JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+    PATH: /home/airflow/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
@@ -29,6 +30,8 @@ x-airflow-common: &airflow-common
 services:
   postgres:
     image: postgres:15
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -94,6 +97,8 @@ services:
       <<: *airflow-common-env
   minio:
     image: minio/minio
+    env_file:
+      - .env
     ports:
       - "9000:9000"
       - "9001:9001"

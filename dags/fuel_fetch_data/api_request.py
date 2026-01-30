@@ -4,6 +4,7 @@ import time
 from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.operators.dagrun_operator import TriggerDagRunOperator
 
 RETAILERS = [
     {"brand": "Applegreen", "url": "https://www.applegreenstores.com/fuel-prices/data.json"},
@@ -22,7 +23,7 @@ default_args = {
 }
 
 @dag(
-    dag_id='uk_fuel_price_archive_v1',
+    dag_id='uk_fuel_price_archive',
     default_args=default_args,
     schedule='0 9 * * *',  # Runs at 0 minutes, 9 hours (9:00 AM) every day
     start_date=datetime(2024, 1, 1),
@@ -34,7 +35,7 @@ def fuel_price_collector_dag():
     def fetch_all_retailers():
         s3_hook = S3Hook(aws_conn_id="aws_s3_gas_prices")
         bucket_name = "uk-gas-price"
-        # 1. Initialize the Session and Headers
+        # Initialize the Session and Headers
         session = requests.Session()
         common_headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -83,7 +84,18 @@ def fuel_price_collector_dag():
         
         return results
 
-    fetch_all_retailers()
+    fetch_data = fetch_all_retailers()
 
-# Initialize the DAG
+    trigger_processing = TriggerDagRunOperator(
+        task_id="trigger_unified_pipeline",
+        trigger_dag_id="fuel_prices_unified_pipeline", # Must match the other DAG's ID
+        wait_for_completion=False, # Just trigger and finish
+        reset_dag_run=True,        # Allows it to trigger again on re-runs
+        conf={"target_date": "{{ ds }}"}
+    )
+
+    # Set the dependency chain
+    fetch_data >> trigger_processing
+
+# Initialize the DAG by calling the function
 fuel_price_collector_dag()
