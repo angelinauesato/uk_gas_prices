@@ -91,7 +91,7 @@ def fuel_price_collector_dag():
         trigger_dag_id="fuel_prices_unified_pipeline", # Must match the other DAG's ID
         wait_for_completion=False, # Just trigger and finish
         reset_dag_run=True,        # Allows it to trigger again on re-runs
-        conf={"target_date": "{{ ds }}"}
+        conf={"target_date": "{{ data_interval_end | ds }}"}
     )
 
     # Set the dependency chain
