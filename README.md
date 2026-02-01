@@ -1,10 +1,10 @@
 # 🚀 UK Fuel Price Archiver (v1)
-A robust data engineering pipeline built with **Airflow 3** and **Docker** to archive daily fuel prices from major UK retailers (Asda, BP, Esso, etc.)
+A robust data engineering pipeline built with **Airflow ** and **Docker** to archive daily fuel prices from major UK retailers (Asda, BP, Esso, etc.)
 into a **MinIO** (S3-compatible) Data Lake.
 # 🛠 Tech Stack
-* Orchestrator: Airflow 3 (TaskFlow API)
+* Orchestrator: Airflow (TaskFlow API, TriggerDagRunOperator, S3Hook, SparkSession, SparkSubmitOperator, PostgresHook, BaseHook, TriggerDagRunOperator, BashOperator)
 * Storage: MinIO (S3 API)
-* Containerization: Docker & Docker Compose
+* Containerization: Dockerfile & Docker Compose
 * Language: Python 3.12 (Requests, Boto3)
 
 # 📂 Project Structure
@@ -12,6 +12,16 @@ into a **MinIO** (S3-compatible) Data Lake.
 ├── dags/
 │   └── fuel_fetch_data/
 │       └── api_request.py    # Main DAG file
+|── dbt/
+|     └──fuel_project/
+|        └── analyses/
+|        └── macros/
+|        └── models/
+|        └── seeds/
+|        └── snapshots/
+|        └── tests/
+|        ── dbt_project.yml
+|        ── profiles.yml # ignored and not pushed to the repo
 ├── docker-compose.yaml       # Airflow & MinIO services
 |── .env                      # ignored and not pushed to the repo
 └── README.md
@@ -81,7 +91,7 @@ docker compose exec airflow-webserver dbt docs serve --project-dir /opt/airflow/
 - [ x ] Save data. Postgres. We have **raw** database: uk_gas_prices_raw and **prod** database: fuel_prices_prod
 - [ x ] Update the pipeline to run dbt model to update the data.
 - [ ] Data Archiving - moves old records (older than 30 days) into a long-term storage table
-- [ ] Build a Slack or e-mail notification task for failure alerts.
+- [ x ] Build a Slack or e-mail notification task for failure alerts.
 
 # 🔍 Troubleshooting & Known Issues
 1. Shell 403 Forbidden Error <br />
