@@ -4,10 +4,13 @@ from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOpe
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.hooks.base import BaseHook
 from airflow.operators.dagrun_operator import TriggerDagRunOperator
+from airflow.operators.bash import BashOperator
 
 from datetime import datetime
 
 RETAILERS = ["Applegreen", "Asda", "BP", "Esso"]
+# Define the dbt path once at the top
+DBT_PROJECT_DIR = "/opt/airflow/dbt/fuel_project"
 
 @dag(
     start_date=datetime(2026, 1, 29),
@@ -55,8 +58,32 @@ def fuel_prices_unified_pipeline():
             }
         )
         spark_tasks.append(st)
+    
+    # The dbt Run Task
+    dbt_run = BashOperator(
+        task_id='dbt_run_transformation',
+        bash_command=f'cd {DBT_PROJECT_DIR} && dbt run --profiles-dir .',
+        # This ensures dbt can access the database passwords from your environment
+        env={**os.environ},
+        append_env=True
+    )
+
+    # The dbt Test Task
+    dbt_test = BashOperator(
+        task_id='dbt_test_integrity',
+        bash_command=f'cd {DBT_PROJECT_DIR} && dbt test --profiles-dir .',
+        env={**os.environ},
+        append_env=True
+    )
+
+    dbt_docs = BashOperator(
+        task_id='dbt_docs_update',
+        bash_command=f'cd {DBT_PROJECT_DIR} && dbt docs generate --profiles-dir .',
+        env={**os.environ},
+        append_env=True
+    )
 
     # Dependency: All tasks must finish before Notification
-    spark_tasks >> notify_completion(RETAILERS)
+    spark_tasks >> dbt_run >> dbt_test >> dbt_docs >> notify_completion(RETAILERS)
 
 fuel_prices_unified_pipeline()
