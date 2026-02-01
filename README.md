@@ -79,11 +79,9 @@ docker compose exec airflow-webserver dbt docs serve --project-dir /opt/airflow/
 - [ x ] Add a transformation layer to convert JSON raw layer (database in Postgres).
 - [ x ] Update pipeline to trigger the transformation right after the ingestion of the JSON files.
 - [ x ] Save data. Postgres. We have **raw** database: uk_gas_prices_raw and **prod** database: fuel_prices_prod
-- [ ] Update the pipeline to run dbt model to update the data.
-- [ ] Turn the data available into a BI Tool.
+- [ x ] Update the pipeline to run dbt model to update the data.
 - [ ] Data Archiving - moves old records (older than 30 days) into a long-term storage table
 - [ ] Build a Slack or e-mail notification task for failure alerts.
-- [ ] Implement Shell bypass.
 
 # 🔍 Troubleshooting & Known Issues
 1. Shell 403 Forbidden Error <br />
