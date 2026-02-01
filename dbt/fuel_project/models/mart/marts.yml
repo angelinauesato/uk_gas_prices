@@ -11,8 +11,23 @@ models:
           - relationships:
               to: ref('dim_gas_stations')
               field: site_id
-              config:
-                severity: warn
+      - name: valid_from
+        description: "The start date of the price validity period for the site."
+        tests:
+          - not_null
+      - name: price_e10 # Assuming price_e10 is always present for a valid record
+        description: "The price of E10 fuel in pence."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between: # Example custom test
+              min_value: 100 # Assuming min price is 1.00 GBP (100 pence)
+              max_value: 300 # Assuming max price is 3.00 GBP (300 pence)
+    # Add unique_combination_of_columns test for fct_fuel_price_history
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination:
+            - site_id
+            - valid_from
 
   - name: dim_gas_stations
     description: "Master list of unique fuel stations and their geographic information."
@@ -21,4 +36,4 @@ models:
         description: "Primary key for fuel stations."
         tests:
           - not_null
-          - unique
+          - unique # This ensures site_id is unique in the dimension table

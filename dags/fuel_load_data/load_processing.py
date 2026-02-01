@@ -5,6 +5,8 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.hooks.base import BaseHook
 from airflow.operators.dagrun_operator import TriggerDagRunOperator
 from airflow.operators.bash import BashOperator
+from airflow.utils.email import send_email
+from datetime import timedelta
 
 from datetime import datetime
 
@@ -27,7 +29,26 @@ def fuel_prices_unified_pipeline():
     # Success Notification
     @task
     def notify_completion(retailers):
-        print(f"Successfully finished processing {len(retailers)} retailers: {', '.join(retailers)}")
+        target_email = os.getenv('ALERT_EMAIL_ADDRESS')
+    
+        subject = f"✅ Fuel Pipeline Success: {datetime.now().strftime('%Y-%m-%d')}"
+        
+        body = f"""
+        <h2>Fuel Pipeline Completed Successfully</h2>
+        <p><b>Retailers Processed:</b> {', '.join(retailers)}</p>
+        <p><b>Environment:</b> Production</p>
+        <hr>
+        <p>Sent to: {target_email}</p>
+        """
+        if target_email:
+            send_email(
+                to=target_email,
+                subject=subject,
+                html_content=body
+            )
+        else:
+            print("Alert email not sent: ALERT_EMAIL_ADDRESS not found in environment.")
+        
         return True
 
     spark_tasks = []
@@ -65,7 +86,10 @@ def fuel_prices_unified_pipeline():
         bash_command=f'cd {DBT_PROJECT_DIR} && dbt run --profiles-dir .',
         # This ensures dbt can access the database passwords from your environment
         env={**os.environ},
-        append_env=True
+        append_env=True,
+        retries=3,                              # Try up to 3 times before giving up
+        retry_delay=timedelta(minutes=5),       # Wait 5 minutes between tries
+        retry_exponential_backoff=True,         # Wait longer each time (5, 10, 20 mins)
     )
 
     # The dbt Test Task
@@ -73,7 +97,9 @@ def fuel_prices_unified_pipeline():
         task_id='dbt_test_integrity',
         bash_command=f'cd {DBT_PROJECT_DIR} && dbt test --profiles-dir .',
         env={**os.environ},
-        append_env=True
+        append_env=True,
+        retries=1, # 1 time is enough for tests
+        retry_delay=timedelta(minutes=2)
     )
 
     dbt_docs = BashOperator(

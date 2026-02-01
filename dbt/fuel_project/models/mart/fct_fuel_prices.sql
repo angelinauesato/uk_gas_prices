@@ -1,6 +1,8 @@
-{{ 
+{{
     config(
-        materialized='table'
+        materialized='incremental',
+        unique_key=['site_id', 'valid_from'],
+        incremental_strategy='merge'
     )
 }}
 WITH staged_data AS (
@@ -13,6 +15,10 @@ WITH staged_data AS (
         extraction_date,
         loaded_at_utc
     FROM {{ ref('stg_fuel_prices') }}
+    {% if is_incremental() %}
+      -- Only pull data that is newer than the most recent record in this table
+      WHERE loaded_at_utc > (SELECT MAX(loaded_at_utc) FROM {{ this }})
+    {% endif %}
 ),
 
 -- Step 1: Get the latest unique price snapshot per station per day

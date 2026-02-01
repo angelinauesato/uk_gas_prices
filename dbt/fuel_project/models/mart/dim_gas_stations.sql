@@ -1,6 +1,8 @@
-{{ 
+{{
     config(
-        materialized='table'
+        materialized='incremental',
+        unique_key='site_id',
+        incremental_strategy='merge'
     )
 }}
 
@@ -8,6 +10,10 @@ WITH staged_data AS (
     SELECT
         *
     FROM {{ ref('stg_fuel_prices') }}
+    {% if is_incremental() %}
+      WHERE loaded_at_utc > (SELECT MAX(last_updated_at) FROM {{ this }})
+    {% endif %}
+    ORDER BY site_id, loaded_at_utc DESC
 ),
 
 latest_station_info AS (
