@@ -67,10 +67,19 @@ You can manually trigger a test run inside the scheduler container:
 ```
 docker exec -it <container_id> airflow dags test uk_fuel_price_archive_v1 2026-01-24
 ```
+# 💡 Lineage: <br />
+```
+docker compose exec airflow-webserver dbt docs serve --project-dir /opt/airflow/dbt/fuel_project --profiles-dir /opt/airflow/dbt/fuel_project --port 8081
+```
+<img width="1783" height="690" alt="Screenshot 2026-01-31 at 6 43 37 PM" src="https://github.com/user-attachments/assets/da41b230-744b-4e59-9bfe-d20264f6bf1b" />
+
+
 # 📜 Roadmap:<br />
-- [x] Ingest data from retailers and save it inside of MinIO bucket.
-- [ ] Add a transformation layer to convert JSON raw layer (database in Postgres).
-- [ ] Save data. TBD: Postgres or Databricks.
+- [ x ] Ingest data from retailers and save it inside of MinIO bucket.
+- [ x ] Add a transformation layer to convert JSON raw layer (database in Postgres).
+- [ x ] Update pipeline to trigger the transformation right after the ingestion of the JSON files.
+- [ x ] Save data. Postgres. We have **raw** database: uk_gas_prices_raw and **prod** database: fuel_prices_prod
+- [ ] Update the pipeline to run dbt model to update the data.
 - [ ] Turn the data available into a BI Tool.
 - [ ] Data Archiving - moves old records (older than 30 days) into a long-term storage table
 - [ ] Build a Slack or e-mail notification task for failure alerts.
