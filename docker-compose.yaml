@@ -53,6 +53,7 @@ services:
     command: webserver
     ports:
       - "8080:8080"
+      - "8081:8081" # Map the dbt docs port
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s

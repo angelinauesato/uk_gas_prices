@@ -60,13 +60,17 @@ price_groups AS (
 -- Step 5: Final aggregation to get Start and End dates for each price period
 SELECT 
     site_id,
-    price_e10,
-    price_b7,
-    price_e5,
-    price_sdv,
-    MIN(extraction_date) as valid_from,
+    price_e10 AS price_e10_pence,
+    {{ cents_to_pounds('price_e10') }} AS price_e10_gbp,
+    price_b7 AS price_b7_pence,
+    {{ cents_to_pounds('price_b7') }} AS price_b7_gbp,
+    price_e5 AS price_e5_pence,
+    {{ cents_to_pounds('price_e5') }} AS price_e5_gbp,
+    price_sdv AS price_sdv_pence,
+    {{ cents_to_pounds('price_sdv') }} AS price_sdv_gbp,
+    MIN(extraction_date) AS valid_from,
     CASE 
-        WHEN MAX(extraction_date) = CURRENT_DATE THEN '9999-12-31'::date 
+        WHEN MAX(extraction_date) = CURRENT_DATE THEN NULL
         ELSE MAX(extraction_date) 
     END as valid_to
 FROM price_groups
