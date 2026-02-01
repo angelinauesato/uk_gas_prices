@@ -1,6 +1,7 @@
 # 🚀 UK Fuel Price Archiver
 This project implements a robust, end-to-end data pipeline to collect, process, transform, and serve historical and current fuel price data for various retailers across the UK. Leveraging a modern data stack (Airflow, Spark, dbt, MinIO, PostgreSQL), the pipeline ensures data quality, efficiency, and provides a reliable foundation for analytics and reporting.
-![data_pipeline_uk_fuel](https://github.com/user-attachments/assets/6a7e0888-3183-40d3-97b7-afcbf451de5b)
+![data_pipeline](https://github.com/user-attachments/assets/c746a83e-6b0d-4168-8401-a627c2419fb6)
+
 
 ## Architecture
 The pipeline follows a Medallion Architecture pattern (Bronze, Silver, Gold layers) and uses a Star Schema for its final data model.
