@@ -32,7 +32,7 @@ default_args = {
 def fuel_price_collector_dag():
 
     @task
-    def fetch_all_retailers():
+    def fetch_all_retailers(target_date_nodash):
         s3_hook = S3Hook(aws_conn_id="aws_s3_gas_prices")
         bucket_name = "uk-gas-price"
         # Initialize the Session and Headers
@@ -67,7 +67,7 @@ def fuel_price_collector_dag():
                 response.raise_for_status()
                 data = response.json()
 
-                s3_key = f"gas_prices_uk/{brand}/{datetime.now().strftime('%Y_%m_%d')}.json"
+                s3_key = f"gas_prices_uk/{brand}/{target_date_nodash}.json"
                 s3_hook.load_string(
                     string_data=json.dumps(data),
                     key=s3_key,
@@ -84,7 +84,8 @@ def fuel_price_collector_dag():
         
         return results
 
-    fetch_data = fetch_all_retailers()
+    formatted_date = "{{ data_interval_end | ds | replace('-', '_') }}"
+    fetch_data = fetch_all_retailers(formatted_date)
 
     trigger_processing = TriggerDagRunOperator(
         task_id="trigger_unified_pipeline",

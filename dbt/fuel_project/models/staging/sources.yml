@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: raw_fuel_data
+    # database: uk_gas_prices_raw
+    schema: raw_data_import
+    tables:
+      - name: retailers_fuel_prices
+        description: "Raw daily fuel prices scraped from UK retailer JSON feeds."
+        columns:
+          - name: site_id
+            description: "Unique identifier for the fuel station provided by the retailer."
