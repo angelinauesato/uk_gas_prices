@@ -56,11 +56,25 @@ The pipeline follows a Medallion Architecture pattern (Bronze, Silver, Gold laye
         FERNET_KEY={RUN_PYTHON_COMMENTED_CODE_ABOVE}
     
         ```
-  3. Launch the Environment
+
+      Also download the jar files:
+     - Download Postgres JDBC
      ```
-     docker compose -p uk_gas_prices up -d
+      wget https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.1/postgresql-42.7.1.jar
      ```
-  4. Setup Airflow Connections <br/>
+     - Download Hadoop AWS
+     ```
+      wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar
+      ```
+     - Download AWS Java SDK Bundle
+     ```
+      wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar
+     ```
+  4. Launch the Environment
+     ```
+     sudo docker compose -p uk_gas_prices up -d --build
+     ```
+  5. Setup Airflow Connections <br/>
      - To allow Airflow to talk to MinIO, create a connection in the Airflow UI (Admin -> Connections):
        - Conn Id: aws_s3_gas_prices
        - Conn Type: Amazon S3
