@@ -16,8 +16,8 @@ WITH staged_data AS (
         loaded_at_utc
     FROM {{ ref('stg_fuel_prices') }}
     {% if is_incremental() %}
-      -- Only pull data that is newer than the most recent record in this table
-      WHERE loaded_at_utc > (SELECT MAX(loaded_at_utc) FROM {{ this }})
+      -- Compare source loaded_at_utc to target valid_from
+      WHERE loaded_at_utc > (SELECT MAX(valid_from) FROM {{ this }})
     {% endif %}
 ),
 

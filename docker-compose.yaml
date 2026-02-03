@@ -15,13 +15,13 @@ x-airflow-common: &airflow-common
     DBT_PROFILES_DIR: /opt/airflow/dbt/my_project
     JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
     PATH: /home/airflow/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    AIRFLOW__SMTP__SMTP_USER: ${ALERT_EMAIL_ADDRESS}
-    AIRFLOW__SMTP__SMTP_PASSWORD: ${SMTP_APP_PASSWORD}
-    AIRFLOW__SMTP__SMTP_MAIL_FROM: ${ALERT_EMAIL_ADDRESS}
     AIRFLOW__SMTP__SMTP_HOST: "smtp.gmail.com"
     AIRFLOW__SMTP__SMTP_PORT: 587
+    AIRFLOW__SMTP__SMTP_USER: ${ALERT_EMAIL_ADDRESS}
+    AIRFLOW__SMTP__SMTP_PASSWORD: ${SMTP_APP_PASSWORD}
     AIRFLOW__SMTP__SMTP_STARTTLS: "True"
     AIRFLOW__SMTP__SMTP_SSL: "False"
+    AIRFLOW__SMTP__SMTP_MAIL_FROM: ${ALERT_EMAIL_ADDRESS}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs

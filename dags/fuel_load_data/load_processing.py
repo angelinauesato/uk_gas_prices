@@ -29,6 +29,12 @@ def fuel_prices_unified_pipeline():
     # Success Notification
     @task
     def notify_completion(retailers):
+        try:
+            conn = BaseHook.get_connection('smtp_default')
+            print(f"Connecting to {conn.host}:{conn.port} as {conn.login}")
+        except Exception as e:
+            print(f"Could not find connection smtp_default: {e}")
+
         target_email = os.getenv('ALERT_EMAIL_ADDRESS')
     
         subject = f"✅ Fuel Pipeline Success: {datetime.now().strftime('%Y-%m-%d')}"
