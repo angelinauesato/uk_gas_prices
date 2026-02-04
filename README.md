@@ -96,6 +96,22 @@ The pipeline follows a Medallion Architecture pattern (Bronze, Silver, Gold laye
      =# \c fuel_prices_prod;
      =# {NOW IT'S TIME TO RUN **The Foreign Data Wrapper to link the Raw and Prod databases.**}
   ```
+   7. Create the profile.yml for dbt. Save it in: **uk_gas_prices/dbt/fuel_project/profile.yml**
+   ```
+    my_profile:
+      target: dev
+      outputs:
+        dev:
+          type: postgres
+          database: fuel_prices_prod
+          host: postgres
+          pass: "{{ env_var('POSTGRES_PASSWORD') }}"
+          port: 5432
+          schema: public
+          threads: 4
+          type: postgres
+          user: "{{ env_var('POSTGRES_USER') }}"
+   ```
       
 # 🕒 Scheduling<br />
 The DAG is configured to run daily at **9:00 AM UTC** using the cron expression 0 9 * * *.
